@@ -1,0 +1,22 @@
+[project]
+name = "host-vllm"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.125.0",
+    "openai>=1.0.0",
+    "pandas>=3.0.0",
+    "pyarrow>=23.0.0",
+    "pydantic>=1.10.13",
+    "pyyaml>=6.0",
+    "ray>=2.53.0",
+    "setuptools>=80.10.2",
+    "torch>=2.10.0",
+    "torchvision>=0.25.0",
+    "transformers>=5.0.0",
+    "uvicorn>=0.40.0",
+    "vllm>=0.2.5",
+    "wheel>=0.46.3",
+]

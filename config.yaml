@@ -1,0 +1,126 @@
+# VLLM Host Configuration
+# Set the active_model to the model you want to run
+# The run.sh script will automatically submit the correct SLURM job
+
+# Active model selection
+# Options: gpt-oss-20b, gpt-oss-120b, glm-4.7-flash, glm-4.7, glm-4.6v, qwen3-vl-235b
+active_model: qwen3-vl-235b
+
+# Model configurations
+models:
+  gpt-oss-20b:
+    name: "GPT-OSS 20B"
+    huggingface_id: "openai/gpt-oss-20b"
+    job_script: "jobs/gpt_oss_20b_single_h100.sh"
+    query_script: "scripts/query_openai_compatible.py"  # Optional: script to query the model
+    port: 8000
+    gpus: 1
+    nodes: 1
+    quantization: "mxfp4"  # Built-in MXFP4 quantization
+    precision: "8bit"  # Options: "8bit" (default), "16bit" (2x VRAM)
+    vision: false
+    description: "24GB VRAM, fast reasoning model with tool use"
+
+  gpt-oss-120b:
+    name: "GPT-OSS 120B"
+    huggingface_id: "openai/gpt-oss-120b"
+    job_script: "jobs/gpt_oss_120b_single_h100.sh"
+    query_script: "scripts/query_openai_compatible.py"
+    port: 8000
+    gpus: 1
+    nodes: 1
+    quantization: "mxfp4"
+    precision: "8bit"
+    vision: false
+    description: "80GB VRAM, high-reasoning model for production"
+
+  glm-4.7-flash:
+    name: "GLM-4.7-Flash"
+    huggingface_id: "zai-org/GLM-4.7-Flash"
+    job_script: "jobs/glm4_7_flash_2gpus.sh"
+    query_script: "scripts/query_openai_compatible.py"
+    port: 8001
+    gpus: 2
+    nodes: 1
+    quantization: "fp8"
+    precision: "8bit"
+    vision: false
+    description: "30B-A3B MoE, 128K context, fast inference on 2 GPUs"
+
+  glm-4.7:
+    name: "GLM-4.7"
+    huggingface_id: "zai-org/GLM-4.7"
+    job_script: "jobs/glm4_7_2nodes_4gpus.sh"
+    query_script: "scripts/query_openai_compatible.py"
+    port: 8002
+    gpus: 8
+    nodes: 2
+    quantization: "fp8"
+    precision: "8bit"
+    vision: false
+    description: "358B MoE, 131K context, 8 GPUs (2 nodes)"
+
+  glm-4.6v:
+    name: "GLM-4.6V"
+    huggingface_id: "zai-org/GLM-4.6V-FP8"
+    job_script: "jobs/glm4_6v_2gpus_fp8.sh"
+    query_script: "scripts/query_openai_compatible.py"
+    port: 8004
+    gpus: 2
+    nodes: 1
+    quantization: "fp8"
+    precision: "8bit"  # 8-bit uses 2 GPUs, 16-bit would need 4 GPUs
+    vision: true
+    description: "108B vision-language MoE, 128K context, 2 GPUs with FP8"
+
+  glm-4.6v-fp16:
+    name: "GLM-4.6V (16-bit)"
+    huggingface_id: "zai-org/GLM-4.6V"
+    job_script: "jobs/glm4_6v_4gpus_fp16.sh"
+    query_script: "scripts/query_openai_compatible.py"
+    port: 8004
+    gpus: 4
+    nodes: 1
+    quantization: "bf16"
+    precision: "16bit"
+    vision: true
+    description: "108B vision-language MoE, FULL PRECISION, requires 4 GPUs"
+
+  qwen3-vl-235b:
+    name: "Qwen3-VL-235B-A22B-Thinking"
+    huggingface_id: "Qwen/Qwen3-VL-235B-A22B-Thinking-FP8"
+    job_script: "jobs/qwen3_vl_235b_4nodes.sh"
+    query_script: "scripts/query_openai_compatible.py"
+    port: 8003
+    gpus: 8
+    nodes: 2
+    quantization: "fp8"
+    precision: "8bit"
+    vision: true
+    # Optional: override global SLURM settings per model
+    # time: "24:00:00"      # Job time limit (overrides slurm.time_default)
+    # partition: "long"     # SLURM partition (overrides slurm.partition)
+    description: "236B MoE VL, 256K context, visual agent capabilities, 16 GPUs"
+
+# SLURM cluster configuration
+slurm:
+  partition: "capella"
+  account: ""  # Set your SLURM account here
+  time_default: "12:00:00"
+  cpus_per_task: 16
+
+# Cache directories (shared across jobs)
+cache:
+  xdg_cache_home: "/data/horse/ws/s1787956-Cache"
+  triton_cache_dir: "/data/horse/ws/s1787956-Cache/triton"
+
+# vLLM server settings
+vllm:
+  gpu_memory_utilization: 0.90
+  max_model_len_default: 32768
+  max_num_seqs: 16
+
+# Logging
+logging:
+  log_dir: "logs"
+  verbose: true
