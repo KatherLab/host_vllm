@@ -3,10 +3,9 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-node=1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=48G
-#SBATCH --time=24:00:00
-#SBATCH --partition=capella
+#SBATCH --time=${VLLM_CONFIG_SLURM_TIME:-24:00:00}
+#SBATCH --partition=${VLLM_CONFIG_SLURM_PARTITION:-capella}
+#SBATCH --mem=${VLLM_CONFIG_SLURM_MEM:-48G}
 #SBATCH --output=logs/gpt_oss_20b_%j.out
 #SBATCH --error=logs/gpt_oss_20b_%j.err
 
@@ -15,17 +14,12 @@ mkdir -p logs
 
 # Load modules / set environment
 module load CUDA
-export XDG_CACHE_HOME=/data/horse/ws/s1787956-Cache
-export TRITON_CACHE_DIR=/data/horse/ws/s1787956-Cache/triton
-mkdir -p $TRITON_CACHE_DIR
+export XDG_CACHE_HOME="${VLLM_CONFIG_CACHE_DIR:-/tmp}"
+export TRITON_CACHE_DIR="${VLLM_CONFIG_CACHE_DIR:-/tmp}/triton"
+mkdir -p "$TRITON_CACHE_DIR"
 
-# Activate virtual environment (adjust path if needed)
-# NOTE: Requires special vLLM build for GPT-OSS support:
-# uv pip install --pre vllm==0.10.1+gptoss \
-#   --extra-index-url https://wheels.vllm.ai/gpt-oss/ \
-#   --extra-index-url https://download.pytorch.org/whl/nightly/cu128 \
-#   --index-strategy unsafe-best-match
-source $HOME/host_vllm/.venv/bin/activate
+# Activate virtual environment
+source "${VLLM_CONFIG_VENV_DIR:-$HOME/host_vllm/.venv}/bin/activate"
 ulimit -n 16384
 
 # Model to serve - GPT-OSS 20B (24GB VRAM requirement with MXFP4 quantization)

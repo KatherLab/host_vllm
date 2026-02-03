@@ -118,6 +118,36 @@ DESC=$(get_config ".models.${ACTIVE_MODEL}.description")
 JOB_TIME=$(get_config ".models.${ACTIVE_MODEL}.time")
 JOB_PARTITION=$(get_config ".models.${ACTIVE_MODEL}.partition")
 
+# Get global SLURM configuration
+SLURM_ACCOUNT=$(get_config ".slurm.account")
+SLURM_CPUS_PER_TASK=$(get_config ".slurm.cpus_per_task")
+SLURM_MEM_PER_GPU=$(get_config ".slurm.mem_per_gpu")
+
+# Get cache directories
+CACHE_XDG=$(get_config ".cache.xdg_cache_home")
+CACHE_TRITON=$(get_config ".cache.triton_cache_dir")
+CACHE_HF=$(get_config ".cache.huggingface_cache")
+
+# Get venv path
+VENV_DIR=$(get_config ".paths.venv_dir")
+
+# Get distributed settings
+RDZV_BACKEND=$(get_config ".distributed.rdzv_backend")
+RDZV_TIMEOUT=$(get_config ".distributed.rdzv_timeout")
+MASTER_PORT_BASE=$(get_config ".distributed.master_port_base")
+
+# Get NCCL settings
+NCCL_SOCKET_IFNAME=$(get_config ".nccl.socket_ifname")
+NCCL_BLOCKSIZE=$(get_config ".nccl.blocksize")
+NCCL_IB_TIMEOUT=$(get_config ".nccl.ib_timeout")
+NCCL_DEBUG=$(get_config ".nccl.debug")
+
+# Get vLLM settings
+VLLM_GPU_MEM=$(get_config ".vllm.gpu_memory_utilization")
+VLLM_MAX_MODEL_LEN=$(get_config ".vllm.max_model_len_default")
+VLLM_MAX_NUM_SEQS=$(get_config ".vllm.max_num_seqs")
+VLLM_DTYPE=$(get_config ".vllm.dtype")
+
 # Fallback to global SLURM settings if not defined per-model
 if [[ -z "$JOB_TIME" || "$JOB_TIME" == "null" ]]; then
     JOB_TIME=$(get_config ".slurm.time_default")
@@ -125,6 +155,19 @@ fi
 if [[ -z "$JOB_PARTITION" || "$JOB_PARTITION" == "null" ]]; then
     JOB_PARTITION=$(get_config ".slurm.partition")
 fi
+
+# Set defaults for optional configs
+[[ -z "$RDZV_BACKEND" || "$RDZV_BACKEND" == "null" ]] && RDZV_BACKEND="c10d"
+[[ -z "$RDZV_TIMEOUT" || "$RDZV_TIMEOUT" == "null" ]] && RDZV_TIMEOUT="1200"
+[[ -z "$MASTER_PORT_BASE" || "$MASTER_PORT_BASE" == "null" ]] && MASTER_PORT_BASE="29500"
+[[ -z "$NCCL_BLOCKSIZE" || "$NCCL_BLOCKSIZE" == "null" ]] && NCCL_BLOCKSIZE="1048576"
+[[ -z "$NCCL_IB_TIMEOUT" || "$NCCL_IB_TIMEOUT" == "null" ]] && NCCL_IB_TIMEOUT="22"
+[[ -z "$NCCL_DEBUG" || "$NCCL_DEBUG" == "null" ]] && NCCL_DEBUG="WARN"
+[[ -z "$VLLM_GPU_MEM" || "$VLLM_GPU_MEM" == "null" ]] && VLLM_GPU_MEM="0.90"
+[[ -z "$VLLM_MAX_MODEL_LEN" || "$VLLM_MAX_MODEL_LEN" == "null" ]] && VLLM_MAX_MODEL_LEN="32768"
+[[ -z "$VLLM_MAX_NUM_SEQS" || "$VLLM_MAX_NUM_SEQS" == "null" ]] && VLLM_MAX_NUM_SEQS="16"
+[[ -z "$VLLM_DTYPE" || "$VLLM_DTYPE" == "null" ]] && VLLM_DTYPE="auto"
+[[ -z "$SLURM_CPUS_PER_TASK" || "$SLURM_CPUS_PER_TASK" == "null" ]] && SLURM_CPUS_PER_TASK="16"
 
 # Validate
 if [[ -z "$JOB_SCRIPT" || "$JOB_SCRIPT" == "null" ]]; then
@@ -196,6 +239,37 @@ fi
 if [[ -n "$JOB_PARTITION" && "$JOB_PARTITION" != "null" ]]; then
     SBATCH_OPTS="$SBATCH_OPTS --partition=$JOB_PARTITION"
 fi
+if [[ -n "$SLURM_ACCOUNT" && "$SLURM_ACCOUNT" != "null" ]]; then
+    SBATCH_OPTS="$SBATCH_OPTS --account=$SLURM_ACCOUNT"
+fi
+if [[ -n "$SLURM_CPUS_PER_TASK" && "$SLURM_CPUS_PER_TASK" != "null" ]]; then
+    SBATCH_OPTS="$SBATCH_OPTS --cpus-per-task=$SLURM_CPUS_PER_TASK"
+fi
+if [[ -n "$SLURM_MEM_PER_GPU" && "$SLURM_MEM_PER_GPU" != "null" ]]; then
+    SBATCH_OPTS="$SBATCH_OPTS --mem-per-gpu=$SLURM_MEM_PER_GPU"
+fi
+
+# Export configuration as environment variables for job script
+export VLLM_CONFIG_CACHE_XDG="$CACHE_XDG"
+export VLLM_CONFIG_CACHE_TRITON="$CACHE_TRITON"
+export VLLM_CONFIG_CACHE_HF="$CACHE_HF"
+export VLLM_CONFIG_VENV_DIR="$VENV_DIR"
+export VLLM_CONFIG_RDZV_BACKEND="$RDZV_BACKEND"
+export VLLM_CONFIG_RDZV_TIMEOUT="$RDZV_TIMEOUT"
+export VLLM_CONFIG_MASTER_PORT="$MASTER_PORT_BASE"
+export VLLM_CONFIG_NCCL_SOCKET_IFNAME="$NCCL_SOCKET_IFNAME"
+export VLLM_CONFIG_NCCL_BLOCKSIZE="$NCCL_BLOCKSIZE"
+export VLLM_CONFIG_NCCL_IB_TIMEOUT="$NCCL_IB_TIMEOUT"
+export VLLM_CONFIG_NCCL_DEBUG="$NCCL_DEBUG"
+export VLLM_CONFIG_GPU_MEM="$VLLM_GPU_MEM"
+export VLLM_CONFIG_MAX_MODEL_LEN="$VLLM_MAX_MODEL_LEN"
+export VLLM_CONFIG_MAX_NUM_SEQS="$VLLM_MAX_NUM_SEQS"
+export VLLM_CONFIG_DTYPE="$VLLM_DTYPE"
+export VLLM_CONFIG_MODEL="$ACTIVE_MODEL"
+export VLLM_CONFIG_HF_ID="$HF_ID"
+export VLLM_CONFIG_PORT="$PORT"
+export VLLM_CONFIG_GPUS="$GPUS"
+export VLLM_CONFIG_NODES="$NODES"
 
 # Submit the job
 echo ""
@@ -214,52 +288,23 @@ if [[ -z "$JOB_ID" ]]; then
 fi
 
 echo -e "${GREEN}Job submitted successfully!${NC}"
-echo "  Job ID: $JOB_ID"
 echo ""
-echo -e "${BLUE}Monitoring job...${NC}"
-echo "  Command: squeue -j $JOB_ID"
-echo ""
-
-# Wait for job to start (optional monitoring)
-WAIT_TIMEOUT=300  # 5 minutes
-WAITED=0
-echo "Waiting for job to start..."
-while squeue -j "$JOB_ID" -h | grep -q "PD"; do
-    if [[ $WAITED -ge $WAIT_TIMEOUT ]]; then
-        echo -e "${YELLOW}Timeout waiting for job to start. Check with: squeue -j $JOB_ID${NC}"
-        break
-    fi
-    sleep 5
-    WAITED=$((WAITED + 5))
-    echo "  Still pending... ($WAITED s)"
-done
-
-# Get job info
-if squeue -j "$JOB_ID" -h | grep -q "R"; then
-    NODE=$(squeue -j "$JOB_ID" -h -o "%N")
-    echo ""
-    echo -e "${GREEN}Job is now running!${NC}"
-    echo "  Node: $NODE"
-    echo "  Port: $PORT"
-    echo ""
-    echo -e "${BLUE}To query the model:${NC}"
-    echo "  export VLLM_HOST=$NODE"
-    
-    # Use custom query script if defined, otherwise default
-    if [[ -n "$QUERY_SCRIPT" && "$QUERY_SCRIPT" != "null" && -f "$SCRIPT_DIR/$QUERY_SCRIPT" ]]; then
-        echo "  $SCRIPT_DIR/$QUERY_SCRIPT"
-    else
-        echo "  python main.py --model $ACTIVE_MODEL --host $NODE --prompt \"Your prompt here\""
-    fi
-    echo ""
-    echo -e "${BLUE}To check logs:${NC}"
-    echo "  tail -f logs/${ACTIVE_MODEL}_*.out"
-else
-    echo ""
-    echo -e "${YELLOW}Job status unknown. Check with:${NC}"
-    echo "  squeue -j $JOB_ID"
-    echo "  tail -f logs/${ACTIVE_MODEL}_*.out"
+echo -e "${BLUE}Job Information:${NC}"
+echo "  Job ID:       $JOB_ID"
+echo "  Job Script:   $JOB_SCRIPT"
+echo "  Model:        $ACTIVE_MODEL ($MODEL_NAME)"
+echo "  Port:         $PORT"
+echo "  Nodes:        $NODES"
+echo "  GPUs:         $GPUS"
+if [[ -n "$JOB_TIME" && "$JOB_TIME" != "null" ]]; then
+    echo "  Time Limit:   $JOB_TIME"
 fi
-
+echo ""
+echo -e "${BLUE}Useful Commands:${NC}"
+echo "  Check status: ${GREEN}squeue -j $JOB_ID${NC}"
+echo "  View logs:    ${GREEN}tail -f logs/${ACTIVE_MODEL}_*.out${NC}"
+echo "  Cancel job:   ${GREEN}scancel $JOB_ID${NC}"
+echo ""
+echo -e "${YELLOW}Note: Job may take time to start. Monitor with: squeue -j $JOB_ID${NC}"
 echo ""
 echo -e "${BLUE}========================================${NC}"

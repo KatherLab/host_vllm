@@ -3,10 +3,9 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --gpus-per-node=4
-#SBATCH --cpus-per-task=16
-#SBATCH --mem=256G
-#SBATCH --time=12:00:00
-#SBATCH --partition=capella
+#SBATCH --time=${VLLM_CONFIG_SLURM_TIME:-12:00:00}
+#SBATCH --partition=${VLLM_CONFIG_SLURM_PARTITION:-capella}
+#SBATCH --mem=${VLLM_CONFIG_SLURM_MEM:-256G}
 #SBATCH --output=logs/glm4_6v_4gpus_fp16_%j.out
 #SBATCH --error=logs/glm4_6v_4gpus_fp16_%j.err
 
@@ -15,13 +14,12 @@ mkdir -p logs
 
 # Load modules / set environment
 module load CUDA
-export XDG_CACHE_HOME=/data/horse/ws/s1787956-Cache
-export TRITON_CACHE_DIR=/data/horse/ws/s1787956-Cache/triton
-mkdir -p $TRITON_CACHE_DIR
+export XDG_CACHE_HOME="${VLLM_CONFIG_CACHE_DIR:-/tmp}"
+export TRITON_CACHE_DIR="${VLLM_CONFIG_CACHE_DIR:-/tmp}/triton"
+mkdir -p "$TRITON_CACHE_DIR"
 
-# Activate virtual environment (adjust path if needed)
-# NOTE: Requires vLLM>=0.12.0 and transformers>=5.0.0rc0 for GLM-4.6V:
-source $HOME/host_vllm/.venv/bin/activate
+# Activate virtual environment
+source "${VLLM_CONFIG_VENV_DIR:-$HOME/host_vllm/.venv}/bin/activate"
 ulimit -n 16384
 
 # Model to serve - GLM-4.6V (108B parameter vision-language MoE model)

@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=qwen3-vl-235b-2nodes
-#SBATCH --nodes=2                     # 2 nodes with 4 GPUs each = 8 GPUs total
+#SBATCH --job-name=llama4-maverick-2nodes-8gpus
+#SBATCH --nodes=2               # 2 nodes, each with 4 GPUs => 8 GPUs total
 #SBATCH --ntasks=2
 #SBATCH --gpus-per-node=4
 #SBATCH --partition=capella
-#SBATCH --output=logs/qwen3_vl_235b_%j.out
-#SBATCH --error=logs/qwen3_vl_235b_%j.err
+#SBATCH --output=logs/llama4_maverick_2nodes_8gpus_%j.out
+#SBATCH --error=logs/llama4_maverick_2nodes_8gpus_%j.err
 # Note: --account, --time, --cpus-per-task, --mem-per-gpu set by run.sh via sbatch options
 
 # Create logs directory
@@ -40,19 +40,19 @@ else
 fi
 ulimit -n 16384
 
-# Model to serve - Qwen3-VL-235B-A22B-Thinking (236B MoE vision-language model)
-# - 235B total parameters, 22B active parameters (MoE architecture)
-# - Supports native 256K context, expandable to 1M
-# - Visual agent capabilities, advanced spatial perception, video understanding
-# - FP8 quantization for efficient inference on 8 GPUs (2 nodes)
-# Requirements: vllm>=0.15.0, transformers>=4.51.0
+# Model to serve - Llama-4-Maverick-17B-128E-Instruct (17B activated params, 400B total)
+# - Mixture-of-Experts with 128 experts
+# - 1M token context window (expandable)
+# - Native multimodal (vision and text support)
+# - FP8 quantization for 8-bit inference across 8 GPUs (2 nodes)
+# Requirements: vllm>=0.15.0, transformers>=4.51.0, torch>=2.10.0
 
 # Use config values if available, otherwise use defaults
-VLLM_MODEL="${VLLM_CONFIG_HF_ID:-Qwen/Qwen3-VL-235B-A22B-Thinking-FP8}"
-VLLM_PORT="${VLLM_CONFIG_PORT:-8003}"
+VLLM_MODEL="${VLLM_CONFIG_HF_ID:-meta-llama/Llama-4-Maverick-17B-128E-Instruct}"
+VLLM_PORT="${VLLM_CONFIG_PORT:-8006}"
 TENSOR_PARALLEL_SIZE="${VLLM_CONFIG_GPUS:-8}"
 GPU_MEMORY_UTIL="${VLLM_CONFIG_GPU_MEM:-0.90}"
-MAX_MODEL_LEN="${VLLM_CONFIG_MAX_MODEL_LEN:-32768}"
+MAX_MODEL_LEN="${VLLM_CONFIG_MAX_MODEL_LEN:-1048576}"
 MAX_NUM_SEQS="${VLLM_CONFIG_MAX_NUM_SEQS:-8}"
 DTYPE="${VLLM_CONFIG_DTYPE:-auto}"
 
@@ -67,7 +67,7 @@ MASTER_PORT=$((MASTER_PORT_BASE + $SLURM_JOB_ID % 1000))
 
 echo "Master address: $MASTER_ADDR"
 echo "Master port: $MASTER_PORT"
-echo "Starting Qwen3-VL-235B-A22B-Thinking on 2 nodes (8 GPUs) with FP8 quantization..."
+echo "Starting Llama-4-Maverick-17B-128E-Instruct on 2 nodes (8 GPUs) with FP8 quantization..."
 echo "Model: $VLLM_MODEL"
 echo "Tensor Parallel Size: $TENSOR_PARALLEL_SIZE"
 
@@ -84,6 +84,9 @@ export NCCL_TREE_THRESHOLD=0
 export NCCL_TIMEOUT=1800
 
 # Launch vLLM server across the allocated nodes using srun and torchrun
+# --tensor-parallel-size distributes model across all GPUs
+# --rdzv_backend=c10d uses PyTorch's distributed rendezvous backend
+# --rdzv_endpoint ensures all nodes coordinate properly
 srun \
   --nodes=2 \
   --ntasks-per-node=1 \
@@ -105,3 +108,4 @@ srun \
     --max-model-len $MAX_MODEL_LEN \
     --max-num-seqs $MAX_NUM_SEQS \
     --dtype $DTYPE \
+    --trust-remote-code

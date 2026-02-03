@@ -3,7 +3,7 @@
 # The run.sh script will automatically submit the correct SLURM job
 
 # Active model selection
-# Options: gpt-oss-20b, gpt-oss-120b, glm-4.7-flash, glm-4.7, glm-4.6v, qwen3-vl-235b
+# Options: gpt-oss-20b, gpt-oss-120b, glm-4.7-flash, glm-4.7, glm-4.6v, qwen3-vl-235b, llama-4-scout, llama-4-maverick
 active_model: qwen3-vl-235b
 
 # Model configurations
@@ -89,7 +89,7 @@ models:
   qwen3-vl-235b:
     name: "Qwen3-VL-235B-A22B-Thinking"
     huggingface_id: "Qwen/Qwen3-VL-235B-A22B-Thinking-FP8"
-    job_script: "jobs/qwen3_vl_235b_4nodes.sh"
+    job_script: "jobs/qwen3_vl_235b_1node.sh"
     query_script: "scripts/query_openai_compatible.py"
     port: 8003
     gpus: 8
@@ -97,28 +97,87 @@ models:
     quantization: "fp8"
     precision: "8bit"
     vision: true
-    # Optional: override global SLURM settings per model
-    # time: "24:00:00"      # Job time limit (overrides slurm.time_default)
-    # partition: "long"     # SLURM partition (overrides slurm.partition)
-    description: "236B MoE VL, 256K context, visual agent capabilities, 16 GPUs"
+    time: "24:00:00"      # Job time limit (overrides slurm.time_default)
+    # partition: "long"     # Optional: override SLURM partition
+    description: "236B MoE VL, 256K context, visual agent capabilities, 16 GPUs (2 nodes)"
+
+  llama-4-scout:
+    name: "Llama-4-Scout-17B-16E-Instruct"
+    huggingface_id: "meta-llama/Llama-4-Scout-17B-16E-Instruct"
+    job_script: "jobs/llama4_scout_2gpus.sh"
+    query_script: "scripts/query_openai_compatible.py"
+    port: 8005
+    gpus: 2
+    nodes: 1
+    quantization: "fp8"
+    precision: "8bit"
+    vision: true
+    description: "17Bx16E MoE, 10M context, multimodal VLM, 2 GPUs with FP8"
+
+  llama-4-maverick:
+    name: "Llama-4-Maverick-17B-128E-Instruct"
+    huggingface_id: "meta-llama/Llama-4-Maverick-17B-128E-Instruct"
+    job_script: "jobs/llama4_maverick_2nodes_8gpus.sh"
+    query_script: "scripts/query_openai_compatible.py"
+    port: 8006
+    gpus: 8
+    nodes: 2
+    quantization: "fp8"
+    precision: "8bit"
+    vision: true
+    description: "17Bx128E MoE, 1M context, multimodal VLM, 8 GPUs (2 nodes) with FP8"
 
 # SLURM cluster configuration
 slurm:
   partition: "capella"
-  account: ""  # Set your SLURM account here
-  time_default: "12:00:00"
-  cpus_per_task: 16
+  account: "p_scads_pathology"  # SLURM account for job submission
+  time_default: "12:00:00"  # Default job time limit (HH:MM:SS)
+  cpus_per_task: 16  # Number of CPU cores per GPU task
+  mem_per_gpu: "64G"  # Memory allocation per GPU
 
 # Cache directories (shared across jobs)
+# Set these to your preferred cache locations to avoid exposing paths in job scripts
 cache:
-  xdg_cache_home: "/data/horse/ws/s1787956-Cache"
-  triton_cache_dir: "/data/horse/ws/s1787956-Cache/triton"
+  xdg_cache_home: ""  # Leave empty to use system default, or set to: /path/to/cache
+  triton_cache_dir: ""  # Leave empty to use $XDG_CACHE_HOME/triton, or set to: /path/to/triton_cache
+  huggingface_cache: ""  # Optional: HuggingFace hub cache directory
+
+# Environment paths
+paths:
+  venv_dir: ""  # Python virtual environment directory (e.g., $HOME/host_vllm/.venv)
+  # Leave empty to auto-detect from current environment
 
 # vLLM server settings
 vllm:
-  gpu_memory_utilization: 0.90
-  max_model_len_default: 32768
-  max_num_seqs: 16
+  gpu_memory_utilization: 0.90  # Fraction of GPU memory to use (0.0-1.0)
+  max_model_len_default: 32768  # Default maximum sequence length
+  max_num_seqs: 16  # Maximum number of sequences to process in parallel
+  tensor_parallel_size: null  # Auto-calculated from model.gpus * model.nodes
+  dtype: "auto"  # Data type: auto, half, float16, bfloat16
+
+# Multi-node distributed configuration
+distributed:
+  rdzv_backend: "c10d"  # PyTorch rendezvous backend (c10d, gloo, mpi)
+  rdzv_id: "vllm_job"  # Unique job identifier for rendezvous
+  rdzv_timeout: 1200  # Rendezvous timeout in seconds
+  master_port_base: 29500  # Base port for communication
+
+# NCCL configuration for multi-GPU/multi-node
+nccl:
+  socket_ifname: ""  # Network interface for NCCL (e.g., eth0, ib0). Leave empty for auto-detection
+  blocksize: 1048576  # NCCL block size for communication
+  ib_timeout: 22  # InfiniBand timeout
+  debug: "WARN"  # NCCL debug level: TRACE, INFO, WARN, ERROR
+
+# Quantization settings
+quantization:
+  fp8:  # FP8 quantization settings
+    enabled: false  # Enable FP8 if model supports it
+    calibration_size: 512  # Calibration size for FP8 activation scaling
+  mxfp4:  # MXFP4 quantization settings
+    enabled: false  # Enable MXFP4 if model uses it
+  bf16:  # BFloat16 settings
+    enabled: false  # Use BFloat16 instead of FP8/INT8
 
 # Logging
 logging:

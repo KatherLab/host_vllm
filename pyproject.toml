@@ -15,8 +15,8 @@ dependencies = [
     "setuptools>=80.10.2",
     "torch>=2.10.0",
     "torchvision>=0.25.0",
-    "transformers>=5.0.0",
+    "transformers>=4.51.0",
     "uvicorn>=0.40.0",
-    "vllm>=0.2.5",
+    "vllm>=0.15.0",
     "wheel>=0.46.3",
 ]
