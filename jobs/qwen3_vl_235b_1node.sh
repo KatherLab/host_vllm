@@ -104,4 +104,9 @@ srun \
     --gpu-memory-utilization $GPU_MEMORY_UTIL \
     --max-model-len $MAX_MODEL_LEN \
     --max-num-seqs $MAX_NUM_SEQS \
+    --enable-auto-tool-choice \
+    --tool-call-parser hermes \
+    --reasoning-parser deepseek_r1 \
+    --mm-encoder-tp-mode data \
+    --mm-processor-cache-gb 0 \
     --dtype $DTYPE \
