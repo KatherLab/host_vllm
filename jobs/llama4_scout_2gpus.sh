@@ -28,7 +28,7 @@ ulimit -n 16384
 # - 10M token context window
 # - Native multimodal (vision and text support)
 # - FP8 quantization for 8-bit inference on 2 GPUs
-VLLM_MODEL="meta-llama/Llama-4-Scout-17B-16E-Instruct"
+VLLM_MODEL="meta-llama/Llama-4-Scout-17B-16E-Instruct-FP8"
 VLLM_PORT=8005
 
 echo "Starting Llama-4-Scout-17B-16E-Instruct on port $VLLM_PORT with 2 GPUs (FP8 quantization)..."
@@ -40,8 +40,11 @@ vllm serve "$VLLM_MODEL" \
   --host 0.0.0.0 \
   --port $VLLM_PORT \
   --tensor-parallel-size 2 \
-  --quantization fp8 \
   --gpu-memory-utilization 0.90 \
   --max-model-len 10485760 \
   --max-num-seqs 16 \
+  --mm-encoder-tp-mode data \
+  --mm-processor-cache-gb 8 \
+  --enable-auto-tool-choice \
+  --tool-call-parser llama4_pythonic \
   --trust-remote-code
