@@ -35,13 +35,12 @@ echo "Starting Llama-4-Scout-17B-16E-Instruct on port $VLLM_PORT with 2 GPUs (FP
 echo "Model: $VLLM_MODEL"
 
 # Use vLLM serve with FP8 quantization
-# --max-model-len 10485760 = 10M token context limit
 vllm serve "$VLLM_MODEL" \
   --host 0.0.0.0 \
   --port $VLLM_PORT \
   --tensor-parallel-size 2 \
   --gpu-memory-utilization 0.90 \
-  --max-model-len 10485760 \
+  --max-model-len 131072 \
   --max-num-seqs 16 \
   --mm-encoder-tp-mode data \
   --mm-processor-cache-gb 8 \
