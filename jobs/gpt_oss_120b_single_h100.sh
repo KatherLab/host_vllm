@@ -37,4 +37,7 @@ vllm serve "$VLLM_MODEL" \
   --tensor-parallel-size 1 \
   --gpu-memory-utilization 0.95 \
   --max-model-len 32768 \
+  --tool-call-parser openai \
+  --enable-auto-tool-choice \
+  --reasoning_parser openai_gptoss \
   --trust-remote-code
