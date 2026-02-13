@@ -36,10 +36,10 @@ vllm serve "$VLLM_MODEL" \
   --host 0.0.0.0 \
   --port $VLLM_PORT \
   --tensor-parallel-size 2 \
-  --quantization fp8 \
   --gpu-memory-utilization 0.90 \
   --max-model-len 131072 \
   --trust-remote-code \
   --tool-call-parser glm47 \
   --reasoning-parser glm45 \
   --enable-auto-tool-choice
+  # --quantization fp8 \

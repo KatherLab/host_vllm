@@ -37,6 +37,11 @@ vllm serve "$VLLM_MODEL" \
   --host 0.0.0.0 \
   --port $VLLM_PORT \
   --tensor-parallel-size 4 \
+  --mm-encoder-tp-mode data \
+  --mm-processor-cache-type shm \
+  --enable-auto-tool-choice \
+  --tool-call-parser glm45 \
+  --reasoning-parser glm45 \
   --gpu-memory-utilization 0.90 \
   --max-model-len 131072 \
   --max-num-seqs 16 \

@@ -100,7 +100,6 @@ srun \
     --host 0.0.0.0 \
     --port $VLLM_PORT \
     --tensor-parallel-size $TENSOR_PARALLEL_SIZE \
-    --quantization fp8 \
     --gpu-memory-utilization $GPU_MEMORY_UTIL \
     --max-model-len $MAX_MODEL_LEN \
     --max-num-seqs $MAX_NUM_SEQS \
@@ -109,4 +108,3 @@ srun \
     --reasoning-parser deepseek_r1 \
     --mm-encoder-tp-mode data \
     --mm-processor-cache-gb 0 \
-    --dtype $DTYPE \

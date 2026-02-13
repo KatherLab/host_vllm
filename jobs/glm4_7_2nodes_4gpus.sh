@@ -47,7 +47,7 @@ ulimit -n 16384
 # Requirements: vllm>=0.15.0
 
 # Use config values if available, otherwise use defaults
-VLLM_MODEL="${VLLM_CONFIG_HF_ID:-zai-org/GLM-4.7}"
+VLLM_MODEL="${VLLM_CONFIG_HF_ID:-zai-org/GLM-4.7-FP8}"
 VLLM_PORT="${VLLM_CONFIG_PORT:-8002}"
 TENSOR_PARALLEL_SIZE="${VLLM_CONFIG_GPUS:-8}"
 GPU_MEMORY_UTIL="${VLLM_CONFIG_GPU_MEM:-0.90}"
@@ -99,11 +99,9 @@ srun \
     --host 0.0.0.0 \
     --port $VLLM_PORT \
     --tensor-parallel-size $TENSOR_PARALLEL_SIZE \
-    --quantization fp8 \
     --gpu-memory-utilization $GPU_MEMORY_UTIL \
     --max-model-len $MAX_MODEL_LEN \
     --max-num-seqs $MAX_NUM_SEQS \
-    --dtype $DTYPE \
     --trust-remote-code \
     --tool-call-parser glm47 \
     --reasoning-parser glm45 \
