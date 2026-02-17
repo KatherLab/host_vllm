@@ -78,17 +78,18 @@ get_config() {
     else
         # Fallback: handle nested keys like .models.<name>.field
         # Parse the key: .models.<model_name>.<field>
-        local model_name=$(echo "$key" | sed -n 's/\.models\.\([^\.]*\)\..*/\1/p')
+        local model_name=$(echo "$key" | sed -n 's/\.models\.\(.*\)\.[^.]*$/\1/p')
         local field=$(echo "$key" | sed 's/.*\.//')
         
         if [[ -n "$model_name" ]]; then
             # Looking for a field in a model: find model section, then get field
             awk -v model="$model_name" -v field="$field" '
                 /^models:/ { in_models=1; next }
+                in_models && /^[a-zA-Z]/ { exit }  # Exit on new top-level section
                 in_models && $0 ~ "^  " model ":" { in_model=1; next }
                 in_models && in_model && /^  [a-z]/ { in_model=0; next }
                 in_model && $0 ~ "^    " field ":" {
-                    $1=""; 
+                    $1="";
                     sub(/^[ 	:]/, "");
                     gsub(/^[" ]+|[" ]+$/, "");
                     print;
@@ -177,7 +178,7 @@ if [[ -z "$JOB_SCRIPT" || "$JOB_SCRIPT" == "null" ]]; then
         yq -r '.models | keys | .[]' "$CONFIG_FILE" | sed 's/^/  - /'
     else
         # List model names (lines with 2-space indent followed by word chars, ending in colon)
-        awk '/^models:/{found=1; next} found && /^$/{exit} found && /^  [a-z0-9_-]+:/{print "  - " $1}' "$CONFIG_FILE" | sed 's/://g'
+        awk '/^models:/{found=1; next} found && /^[a-zA-Z]/{exit} found && /^  [a-zA-Z0-9_.-]+:/{print "  - " $1}' "$CONFIG_FILE" | sed 's/://g'
     fi
     exit 1
 fi

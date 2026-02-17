@@ -4,7 +4,7 @@
 
 # Active model selection
 # Options: gpt-oss-20b, gpt-oss-120b, glm-4.7-flash, glm-4.7, glm-4.6v, qwen3-vl-235b, llama-4-scout, llama-4-maverick
-active_model: qwen3-vl-235b
+active_model: glm-4.6v
 
 # Model configurations
 models:
@@ -138,20 +138,20 @@ slurm:
 # Cache directories (shared across jobs)
 # Set these to your preferred cache locations to avoid exposing paths in job scripts
 cache:
-  xdg_cache_home: ""  # Leave empty to use system default, or set to: /path/to/cache
-  triton_cache_dir: ""  # Leave empty to use $XDG_CACHE_HOME/triton, or set to: /path/to/triton_cache
-  huggingface_cache: ""  # Optional: HuggingFace hub cache directory
+  xdg_cache_home: "/data/horse/ws/s1787956-Cache"  # Leave empty to use system default, or set to: /path/to/cache
+  triton_cache_dir: "/data/horse/ws/s1787956-Cache/triton"  # Leave empty to use $XDG_CACHE_HOME/triton, or set to: /path/to/triton_cache
+  huggingface_cache: "/data/horse/ws/s1787956-Cache/huggingface"  # Optional: HuggingFace hub cache directory
 
 # Environment paths
 paths:
-  venv_dir: ""  # Python virtual environment directory (e.g., $HOME/host_vllm/.venv)
+  venv_dir: "/data/horse/ws/s1787956-host_vllm/code/host_vllm/.venv"  # Python virtual environment directory (e.g., $HOME/host_vllm/.venv)
   # Leave empty to auto-detect from current environment
 
 # vLLM server settings
 vllm:
-  gpu_memory_utilization: 0.90  # Fraction of GPU memory to use (0.0-1.0)
+  gpu_memory_utilization: 0.95  # Fraction of GPU memory to use (0.0-1.0)
   max_model_len_default: 32768  # Default maximum sequence length
-  max_num_seqs: 16  # Maximum number of sequences to process in parallel
+  max_num_seqs: 8  # Maximum number of sequences to process in parallel
   tensor_parallel_size: null  # Auto-calculated from model.gpus * model.nodes
   dtype: "auto"  # Data type: auto, half, float16, bfloat16
 
@@ -173,7 +173,7 @@ nccl:
 quantization:
   fp8:  # FP8 quantization settings
     enabled: false  # Enable FP8 if model supports it
-    calibration_size: 512  # Calibration size for FP8 activation scaling
+    #calibration_size: 512  # Calibration size for FP8 activation scaling
   mxfp4:  # MXFP4 quantization settings
     enabled: false  # Enable MXFP4 if model uses it
   bf16:  # BFloat16 settings
